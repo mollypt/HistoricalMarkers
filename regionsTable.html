@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <style>
+    .hover-highlight {
+      background-color: #C1F3EF; /* Light blue color */
+    }
+    table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    td {
+      width: 25%; /* Ensure all cells have equal width */
+      text-align: left; /* Optional: Center the text in the cells */
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Basic Table</h2>
+  <p>The .table class adds basic styling (light padding and only horizontal dividers) to a table:</p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>West</th>
+        <th>Midwest</th>
+        <th>South</th>
+        <th>Northeast</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Education</td>
+        <td>Civil Rights</td>
+        <td>African Americans</td>
+        <td>Industry</td>
+      </tr>
+      <tr>
+        <td>Civil Rights</td>
+        <td>Education</td>
+        <td>African Americans</td>
+        <td>Industry</td>
+      </tr>
+      <tr>
+        <td>Industry</td>
+        <td>African Americans</td>
+        <td>Civil Rights</td>
+        <td>Education</td>
+      </tr>
+    </tbody>
+  </table>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const cells = document.querySelectorAll('td');
+      cells.forEach(cell => {
+        cell.addEventListener('mouseover', () => {
+          const value = cell.textContent.trim();
+          cells.forEach(otherCell => {
+            if (otherCell.textContent.trim() === value) {
+              otherCell.classList.add('hover-highlight');
+            }
+          });
+        });
+
+        cell.addEventListener('mouseout', () => {
+          const value = cell.textContent.trim();
+          cells.forEach(otherCell => {
+            if (otherCell.textContent.trim() === value) {
+              otherCell.classList.remove('hover-highlight');
+            }
+          });
+        });
+      });
+    });
+  </script>
+</div>
+</body>
+</html>

@@ -6,29 +6,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <style>
     .hover-highlight {
       background-color: #ffdad2; /* Light red color */
     }
+
+    .custom-font {
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 600; /* Adjust the weight as per your needs */
+      font-size: 30px; /* Adjust the size as needed */
+    }
+
     .index-column {
-      width: 5%;
+      width: 3%; /* Reduced width for the index column */
       text-align: center;
       font-weight: bold;
     }
+
     table {
       table-layout: fixed;
-      width: 100%;
+      width: 80%;
     }
+
     td {
-      width: 25%; /* Ensure all cells have equal width */
-      text-align: left; /* Optional: Center the text in the cells */
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 300; /* Adjust the weight as per your needs */
+      font-size: 20px; /* Adjust the size as needed */
+      width: 15%; /* Reduced width for each cell */
+      text-align: left; /* Optional: Align the text in the cells */
+      height: 60px;
+      padding: 5px; /* Padding to maintain some space within the cell */
     }
+
+    th {
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 700; /* Adjust the weight as per your needs */
+      font-size: 20px; /* Adjust the size as needed */
+      width: 15%; /* Reduced width for each header cell */
+      text-align: left; /* Optional: Align the text in the header cells */
+      height: 60px;
+      padding: 5px; /* Padding to maintain some space within the cell */
+    }
+
   </style>
 </head>
 <body>
 <div class="container">
-  <h4>Top Categories by Region</h4>
+  <h4 class="custom-font">Top Categories by Region</h4>
+  <br>
   <table class="table">
     <thead>
       <tr>
@@ -123,97 +150,6 @@
         <td>Notable Buildings</td>
         <td>Native Americans</td>
         <td>Parks & Recreational Areas</td>
-      </tr>
-      <tr>
-        <td class="index-column">13</td>
-        <td>Cemeteries & Burial Sites</td>
-        <td>Railroads & Streetcars</td>
-        <td>Government & Politics</td>
-        <td>Agriculture</td>
-      </tr>
-      <tr>
-        <td class="index-column">14</td>
-        <td>Arts, Letters, Music</td>
-        <td>Parks & Recreational Areas</td>
-        <td>Arts, Letters, Music</td>
-        <td>War, World II</td>
-      </tr>
-      <tr>
-        <td class="index-column">15</td>
-        <td>Notable Buildings</td>
-        <td>Cemeteries & Burial Sites</td>
-        <td>War, World II</td>
-        <td>Entertainment</td>
-      </tr>
-      <tr>
-        <td class="index-column">16</td>
-        <td>Parks & Recreational Areas</td>
-        <td>Arts, Letters, Music</td>
-        <td>Railroads & Streetcars</td>
-        <td>Air & Space</td>
-      </tr>
-      <tr>
-        <td class="index-column">17</td>
-        <td>Native Americans</td>
-        <td>Government & Politics</td>
-        <td>Roads & Vehicles</td>
-        <td>Notable Places</td>
-      </tr>
-      <tr>
-        <td class="index-column">18</td>
-        <td>War, World I</td>
-        <td>Patriots & Patriotism</td>
-        <td>War, US Revolutionary</td>
-        <td>Arts, Letters, Music</td>
-      </tr>
-      <tr>
-        <td class="index-column">19</td>
-        <td>Government & Politics</td>
-        <td>Charity & Public Work</td>
-        <td>Parks & Recreational Areas</td>
-        <td>Forts and Castles</td>
-      </tr>
-      <tr>
-        <td class="index-column">20</td>
-        <td>Charity & Public Work</td>
-        <td>African Americans</td>
-        <td>Women</td>
-        <td>Natural Features</td>
-      </tr>
-      <tr>
-        <td class="index-column">21</td>
-        <td>Railroads & Streetcars</td>
-        <td>Sports</td>
-        <td>Military</td>
-        <td>Women</td>
-      </tr>
-      <tr>
-        <td class="index-column">22</td>
-        <td>Women</td>
-        <td>Agriculture</td>
-        <td>Agriculture</td>
-        <td>Cemeteries & Burial Sites</td>
-      </tr>
-      <tr>
-        <td class="index-column">23</td>
-        <td>War, Vietnam</td>
-        <td>War, World I</td>
-        <td>Forts and Castles</td>
-        <td>Environment</td>
-      </tr>
-      <tr>
-        <td class="index-column">24</td>
-        <td>African Americans</td>
-        <td>Women</td>
-        <td>Science & Medicine</td>
-        <td>Animals</td>
-      </tr>
-      <tr>
-        <td class="index-column">25</td>
-        <td>Roads & Vehicles</td>
-        <td>Entertainment</td>
-        <td>Civil Rights</td>
-        <td>Communications</td>
       </tr>
     </tbody>
   </table>

@@ -14,13 +14,20 @@
             height: 100vh;
             background-color: #f0f0f0;
         }
-        svg {
-            width: 100%; /* Make SVG responsive */
-            height: auto; /* Maintain aspect ratio */
-            margin-right: 40px;
-
+        #svg-container {
+            max-width: 100%;
+            width: 80%;  /* Adjust this to control the overall size */
+            height: 80vh; /* Make it responsive */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            border: 1px solid #ccc; /* Add border if you want */
+            position: relative;
         }
-        /* Styling for the tooltip */
+        svg {
+            width: 100%;
+            height: 100%;
+        }
         .tooltip {
             position: absolute;
             background-color: white;
@@ -38,16 +45,17 @@
     </style>
 </head>
 <body>
-    <!-- Tooltip div -->
+
+    <div id="svg-container">
+        <svg id="main-svg"></svg>
+    </div>
+
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        const originalWidth = 1200;
-        const originalHeight = 600;
-
-        const svg = d3.select("body")
-            .append("svg")
-            .attr("viewBox", `0 0 ${originalWidth} ${originalHeight}`)
+        const svgContainer = document.getElementById("svg-container");
+        const svg = d3.select("#main-svg")
+            .attr("viewBox", `0 0 1200 600`)
             .attr("preserveAspectRatio", "xMidYMid meet");
 
         Promise.all([
@@ -64,72 +72,58 @@
                 feature.properties.percent = stateData[stateName] || 0;
             });
 
-            const width = window.innerWidth;
-            const height = (originalHeight / originalWidth) * width;
+            const width = svgContainer.clientWidth;
+            const height = svgContainer.clientHeight;
 
             const projection = d3.geoAlbersUsa()
                 .translate([width / 2, height / 2])
-                .scale(width * 1.25);
+                .scale(width * 1.5);
 
             const pathGenerator = d3.geoPath().projection(projection);
             let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
 
-            const northeastStates = ["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"];
-            const southStates = ["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"];
-            const midwestStates = ["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"];
-            const westStates = ["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"];
+            const regions = {
+                northeast: ["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"],
+                south: ["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"],
+                midwest: ["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"],
+                west: ["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"]
+            };
 
             stateFeatures.sort(() => Math.random() - 0.5);
 
-            const fixedWidth = width / 30;
-            const fixedHeight = fixedWidth;
-
-            const topRowColumns = 10;
-            const bottomRowColumns = 20;
-            const rowY = [height / 4, height / 2, (3 * height) / 4];
-            const padding = 24;
-            const leftMargin = padding + 10;
-            const topRowWidth = width - (padding * 2);
-            const bottomRowWidth = width - (padding * 2);
+            const rows = [10, 16, 25];
+            const rowYPositions = [height * 0.2, height * 0.5, height * 0.8];
+            const scaleFactors = [1.8, 1.0, 0.6];
 
             stateFeatures.forEach((d, i) => {
                 let rowIndex = 0;
-                let numColumns = topRowColumns;
-                let rowWidth = topRowWidth;
+                let numColumns = rows[rowIndex];
 
-                if (i >= topRowColumns) {
+                if (i >= rows[0]) {
                     rowIndex = 1;
-                    numColumns = bottomRowColumns;
-                    rowWidth = bottomRowWidth;
+                    numColumns = rows[rowIndex];
                 }
-                if (i >= topRowColumns + bottomRowColumns) {
+                if (i >= rows[0] + rows[1]) {
                     rowIndex = 2;
-                    numColumns = bottomRowColumns;
-                    rowWidth = bottomRowWidth;
+                    numColumns = rows[rowIndex];
                 }
 
+                const rowWidth = width - 40; // Adding padding
                 const spacingX = rowWidth / numColumns;
-                d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
-                d.targetY = rowY[rowIndex];
+
+                d.targetX = (i % numColumns) * spacingX + (spacingX / 2);
+                d.targetY = rowYPositions[rowIndex];
 
                 const bounds = pathGenerator.bounds(d);
                 const stateWidth = bounds[1][0] - bounds[0][0];
                 const stateHeight = bounds[1][1] - bounds[0][1];
 
-                if (stateWidth === 0 || stateHeight === 0 || isNaN(stateWidth) || isNaN(stateHeight)) {
-                    d.scaleFactor = 1;
-                } else {
-                    const widthScale = fixedWidth / stateWidth;
-                    const heightScale = fixedHeight / stateHeight;
+                if (stateWidth > 0 && stateHeight > 0) {
+                    const widthScale = spacingX / stateWidth * 0.9; // Scale down a bit to fit better
+                    const heightScale = 60 / stateHeight * scaleFactors[rowIndex];
                     d.scaleFactor = Math.min(widthScale, heightScale);
-
-                    if (rowIndex === 0) {
-                        d.scaleFactor *= 2; // Top row twice as big
-                    } else if (rowIndex === 1) {
-                        d.scaleFactor *= 1; // Middle row normal size
-                    } else if (rowIndex === 2) {
-                        d.scaleFactor *= 0.7; // Bottom row smaller
-                    }
+                } else {
+                    d.scaleFactor = 1;
                 }
 
                 const centroid = pathGenerator.centroid(d);
@@ -145,23 +139,23 @@
                 .append("path")
                 .attr("d", pathGenerator)
                 .attr("fill", d => {
-                    if (northeastStates.includes(d.properties.name)) return "#009076";
-                    if (southStates.includes(d.properties.name)) return "#c71e1d";
-                    if (midwestStates.includes(d.properties.name)) return "#16a1cd";
-                    if (westStates.includes(d.properties.name)) return "#ffd55c";
-                    return "none";
+                    if (regions.northeast.includes(d.properties.name)) return "#009076";
+                    if (regions.south.includes(d.properties.name)) return "#c71e1d";
+                    if (regions.midwest.includes(d.properties.name)) return "#16a1cd";
+                    if (regions.west.includes(d.properties.name)) return "#ffd55c";
+                    return "#ddd";
                 })
                 .attr("stroke", "black")
                 .attr("stroke-width", 1.5)
                 .attr("vector-effect", "non-scaling-stroke")
                 .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`)
                 .on("mouseover", (event, d) => {
-                     tooltip.style("opacity", 1)
-                    .html(`<strong>${d.properties.name}</strong><br/>Civil War: ${d.properties.percent}%`); // Display state name and percent
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.properties.name}</strong><br/>Civil War: ${d.properties.percent}%`);
                 })
                 .on("mousemove", event => {
                     tooltip.style("left", (event.pageX + 10) + "px")
-                           .style("top", (event.pageY - 20) + "px");
+                        .style("top", (event.pageY - 20) + "px");
                 })
                 .on("mouseout", () => {
                     tooltip.style("opacity", 0);
@@ -169,45 +163,26 @@
 
             function reorderStates() {
                 stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
-
                 stateFeatures.forEach((d, i) => {
                     let rowIndex = 0;
-                    let numColumns = topRowColumns;
-                    let rowWidth = topRowWidth;
-
-                    if (i >= topRowColumns) {
-                        rowIndex = 1;
-                        numColumns = bottomRowColumns;
-                        rowWidth = bottomRowWidth;
-                    }
-                    if (i >= topRowColumns + bottomRowColumns) {
-                        rowIndex = 2;
-                        numColumns = bottomRowColumns;
-                        rowWidth = bottomRowWidth;
-                    }
-
+                    if (i >= rows[0]) rowIndex = 1;
+                    if (i >= rows[0] + rows[1]) rowIndex = 2;
+                    const rowWidth = width - 40;
+                    const numColumns = rows[rowIndex];
                     const spacingX = rowWidth / numColumns;
-                    d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
-                    d.targetY = rowY[rowIndex];
+                    d.targetX = (i % numColumns) * spacingX + (spacingX / 2);
+                    d.targetY = rowYPositions[rowIndex];
 
                     const bounds = pathGenerator.bounds(d);
                     const stateWidth = bounds[1][0] - bounds[0][0];
                     const stateHeight = bounds[1][1] - bounds[0][1];
 
-                    if (stateWidth === 0 || stateHeight === 0 || isNaN(stateWidth) || isNaN(stateHeight)) {
-                        d.scaleFactor = 1;
-                    } else {
-                        const widthScale = fixedWidth / stateWidth;
-                        const heightScale = fixedHeight / stateHeight;
+                    if (stateWidth > 0 && stateHeight > 0) {
+                        const widthScale = spacingX / stateWidth * 0.9;
+                        const heightScale = 60 / stateHeight * scaleFactors[rowIndex];
                         d.scaleFactor = Math.min(widthScale, heightScale);
-
-                        if (rowIndex === 0) {
-                            d.scaleFactor *= 2; // Top row twice as big
-                        } else if (rowIndex === 1) {
-                            d.scaleFactor *= 1; // Middle row normal size
-                        } else if (rowIndex === 2) {
-                            d.scaleFactor *= 0.7; // Bottom row smaller
-                        }
+                    } else {
+                        d.scaleFactor = 1;
                     }
 
                     const centroid = pathGenerator.centroid(d);
@@ -221,19 +196,8 @@
             }
 
             svg.on("click", reorderStates);
-
-            // Correct usage:
-            svg.node().dispatchEvent(new MouseEvent("click", {
-                bubbles: true,
-                cancelable: true,
-                view: window
-            }));
+            svg.node().dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
         });
-        // Select the SVG element
-        //const svg = d3.select("svg");
-
-
-
     </script>
 </body>
 </html>

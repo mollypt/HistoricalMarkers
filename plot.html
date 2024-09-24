@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 US States with Region Colors and Tooltips</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        svg {
+            width: 100%; /* Make SVG responsive */
+            height: auto; /* Maintain aspect ratio */
+            border: 1px solid #ccc;
+        }
+        /* Styling for the tooltip */
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            pointer-events: none;
+            font-family: sans-serif;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tooltip div -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const originalWidth = 1200;
+        const originalHeight = 600;
+
+        const svg = d3.select("body")
+            .append("svg")
+            .attr("viewBox", `0 0 ${originalWidth} ${originalHeight}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+
+        Promise.all([
+            d3.csv("state_percents.csv"),
+            d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json")
+        ]).then(([csvData, geojson]) => {
+            const stateData = {};
+            csvData.forEach(d => {
+                stateData[d.state] = +d["US Civil War"];
+            });
+
+            geojson.features.forEach(feature => {
+                const stateName = feature.properties.name;
+                feature.properties.percent = stateData[stateName] || 0;
+            });
+
+            const width = window.innerWidth;
+            const height = (originalHeight / originalWidth) * width;
+
+            const projection = d3.geoAlbersUsa()
+                .translate([width / 2, height / 2])
+                .scale(width * 1.25);
+
+            const pathGenerator = d3.geoPath().projection(projection);
+            let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
+
+            const northeastStates = ["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"];
+            const southStates = ["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"];
+            const midwestStates = ["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"];
+            const westStates = ["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"];
+
+            stateFeatures.sort(() => Math.random() - 0.5);
+
+            const fixedWidth = width / 30;
+            const fixedHeight = fixedWidth;
+
+            const topRowColumns = 10;
+            const bottomRowColumns = 20;
+            const rowY = [height / 4, height / 2, (3 * height) / 4];
+            const padding = 24;
+            const leftMargin = padding + 10;
+            const topRowWidth = width - (padding * 2);
+            const bottomRowWidth = width - (padding * 2);
+
+            stateFeatures.forEach((d, i) => {
+                let rowIndex = 0;
+                let numColumns = topRowColumns;
+                let rowWidth = topRowWidth;
+
+                if (i >= topRowColumns) {
+                    rowIndex = 1;
+                    numColumns = bottomRowColumns;
+                    rowWidth = bottomRowWidth;
+                }
+                if (i >= topRowColumns + bottomRowColumns) {
+                    rowIndex = 2;
+                    numColumns = bottomRowColumns;
+                    rowWidth = bottomRowWidth;
+                }
+
+                const spacingX = rowWidth / numColumns;
+                d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
+                d.targetY = rowY[rowIndex];
+
+                const bounds = pathGenerator.bounds(d);
+                const stateWidth = bounds[1][0] - bounds[0][0];
+                const stateHeight = bounds[1][1] - bounds[0][1];
+
+                if (stateWidth === 0 || stateHeight === 0 || isNaN(stateWidth) || isNaN(stateHeight)) {
+                    d.scaleFactor = 1;
+                } else {
+                    const widthScale = fixedWidth / stateWidth;
+                    const heightScale = fixedHeight / stateHeight;
+                    d.scaleFactor = Math.min(widthScale, heightScale);
+
+                    if (rowIndex === 0) {
+                        d.scaleFactor *= 2; // Top row twice as big
+                    } else if (rowIndex === 1) {
+                        d.scaleFactor *= 1; // Middle row normal size
+                    } else if (rowIndex === 2) {
+                        d.scaleFactor *= 0.7; // Bottom row smaller
+                    }
+                }
+
+                const centroid = pathGenerator.centroid(d);
+                d.translateX = d.targetX - centroid[0] * d.scaleFactor;
+                d.translateY = d.targetY - centroid[1] * d.scaleFactor;
+            });
+
+            const tooltip = d3.select("#tooltip");
+
+            const states = svg.selectAll("path")
+                .data(stateFeatures)
+                .enter()
+                .append("path")
+                .attr("d", pathGenerator)
+                .attr("fill", d => {
+                    if (northeastStates.includes(d.properties.name)) return "#009076";
+                    if (southStates.includes(d.properties.name)) return "#c71e1d";
+                    if (midwestStates.includes(d.properties.name)) return "#16a1cd";
+                    if (westStates.includes(d.properties.name)) return "#ffd55c";
+                    return "none";
+                })
+                .attr("stroke", "black")
+                .attr("stroke-width", 1.5)
+                .attr("vector-effect", "non-scaling-stroke")
+                .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`)
+                .on("mouseover", (event, d) => {
+                     tooltip.style("opacity", 1)
+                    .html(`<strong>${d.properties.name}</strong><br/>Civil War: ${d.properties.percent}%`); // Display state name and percent
+                })
+                .on("mousemove", event => {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", () => {
+                    tooltip.style("opacity", 0);
+                });
+
+            function reorderStates() {
+                stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
+
+                stateFeatures.forEach((d, i) => {
+                    let rowIndex = 0;
+                    let numColumns = topRowColumns;
+                    let rowWidth = topRowWidth;
+
+                    if (i >= topRowColumns) {
+                        rowIndex = 1;
+                        numColumns = bottomRowColumns;
+                        rowWidth = bottomRowWidth;
+                    }
+                    if (i >= topRowColumns + bottomRowColumns) {
+                        rowIndex = 2;
+                        numColumns = bottomRowColumns;
+                        rowWidth = bottomRowWidth;
+                    }
+
+                    const spacingX = rowWidth / numColumns;
+                    d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
+                    d.targetY = rowY[rowIndex];
+
+                    const bounds = pathGenerator.bounds(d);
+                    const stateWidth = bounds[1][0] - bounds[0][0];
+                    const stateHeight = bounds[1][1] - bounds[0][1];
+
+                    if (stateWidth === 0 || stateHeight === 0 || isNaN(stateWidth) || isNaN(stateHeight)) {
+                        d.scaleFactor = 1;
+                    } else {
+                        const widthScale = fixedWidth / stateWidth;
+                        const heightScale = fixedHeight / stateHeight;
+                        d.scaleFactor = Math.min(widthScale, heightScale);
+
+                        if (rowIndex === 0) {
+                            d.scaleFactor *= 2; // Top row twice as big
+                        } else if (rowIndex === 1) {
+                            d.scaleFactor *= 1; // Middle row normal size
+                        } else if (rowIndex === 2) {
+                            d.scaleFactor *= 0.7; // Bottom row smaller
+                        }
+                    }
+
+                    const centroid = pathGenerator.centroid(d);
+                    d.translateX = d.targetX - centroid[0] * d.scaleFactor;
+                    d.translateY = d.targetY - centroid[1] * d.scaleFactor;
+                });
+
+                states.transition()
+                    .duration(1000)
+                    .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);
+            }
+
+            svg.on("click", reorderStates);
+
+            // Correct usage:
+            svg.node().dispatchEvent(new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            }));
+        });
+        // Select the SVG element
+        //const svg = d3.select("svg");
+
+
+
+    </script>
+</body>
+</html>

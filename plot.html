@@ -27,7 +27,7 @@
 
         svg {
             width: 100%;
-            height: auto;
+            height: 100%;
         }
         .tooltip {
             position: absolute;
@@ -57,7 +57,7 @@
         const svgContainer = document.getElementById("svg-container");
         const svg = d3.select("#main-svg")
             .attr("viewBox", `0 0 1200 600`)
-            .attr("preserveAspectRatio", "xMidYMid meet"); // Adjust this to maintain aspect ratio
+            .attr("preserveAspectRatio", "xMidYMid meet"); // Maintain aspect ratio and center
 
         Promise.all([
             d3.csv("state_percents.csv"),
@@ -76,9 +76,10 @@
            const width = svgContainer.clientWidth;
            const height = svgContainer.clientHeight;
 
+           // Recalculate the projection to dynamically adjust
            const projection = d3.geoAlbersUsa()
-    .       translate([width / 2, height / 2])
-    .       scale(Math.min(width, height) * 1.1); // Use a smaller scale to fit better
+                .translate([width / 2, height / 2])
+                .scale(Math.min(width, height) * 1.2); // Scale to fit within the container
 
             const pathGenerator = d3.geoPath().projection(projection);
             let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
@@ -104,7 +105,7 @@
                 const numColumns = rows[rowIndex];
                 const rowWidth = width * 0.9; // Allow for some padding on both sides
                 const spacingX = rowWidth / numColumns;
-                const leftMargin = (width - (numColumns * spacingX)) / 2; // Adjust leftMargin to center the row
+                const leftMargin = (width - rowWidth) / 2; // Adjust leftMargin to center the row
 
                 d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
                 d.targetY = rowYPositions[rowIndex];
@@ -203,10 +204,7 @@
                     .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);
             }
 
-
-
             svg.on("click", reorderStates);
-            //svg.node().dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
         });
     </script>
 </body>

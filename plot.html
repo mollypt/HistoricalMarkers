@@ -13,22 +13,22 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
-            overflow: hidden; /* Prevent page overflow */
+            overflow: hidden; /* Prevent overflow */
         }
         #svg-container {
             max-width: 100%;
-            width: 100%;  /* Use full width */
-            height: 100%; /* Use full height */
+            width: 100%;  /* Full width */
+            height: 100%; /* Full height */
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: hidden; /* Ensure content doesn't overflow */
+            overflow: hidden; /* Prevent overflow */
         }
+
         svg {
             width: 100%;
-            height: auto;
-            display: block; /* Ensures no extra margins */
+            height: 100%;
         }
         .tooltip {
             position: absolute;
@@ -78,14 +78,21 @@
                 const width = svgContainer.clientWidth;
                 const height = svgContainer.clientHeight;
                 
-                // Adjust the projection based on the actual container dimensions
+                // Recalculate the projection based on actual container size
                 const projection = d3.geoAlbersUsa()
                     .translate([width / 2, height / 2])
-                    .scale(Math.min(width, height) * 1.1);
+                    .scale(Math.min(width, height) * 0.95); // Adjust scale to avoid overflow
 
                 const pathGenerator = d3.geoPath().projection(projection);
 
                 let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
+
+                const regions = {
+                    northeast: ["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"],
+                    south: ["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"],
+                    midwest: ["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"],
+                    west: ["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"]
+                };
 
                 const rows = [10, 16, 25];
                 const rowYPositions = [height * 0.2, height * 0.5, height * 0.8];
@@ -97,8 +104,8 @@
                     if (i >= rows[0] + rows[1]) rowIndex = 2;
 
                     const numColumns = rows[rowIndex];
-                    const rowWidth = width; 
-                    const spacingX = rowWidth / numColumns;
+                    const rowWidth = width * 0.95; // Make it responsive to container width
+                    const spacingX = rowWidth / numColumns; // Calculate horizontal spacing
                     const leftMargin = (width - rowWidth) / 2;
 
                     d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
@@ -126,10 +133,10 @@
                     .join("path")
                     .attr("d", pathGenerator)
                     .attr("fill", d => {
-                        if (["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"].includes(d.properties.name)) return "#009076";
-                        if (["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"].includes(d.properties.name)) return "#c71e1d";
-                        if (["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"].includes(d.properties.name)) return "#16a1cd";
-                        if (["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"].includes(d.properties.name)) return "#ffd55c";
+                        if (regions.northeast.includes(d.properties.name)) return "#009076";
+                        if (regions.south.includes(d.properties.name)) return "#c71e1d";
+                        if (regions.midwest.includes(d.properties.name)) return "#16a1cd";
+                        if (regions.west.includes(d.properties.name)) return "#ffd55c";
                         return "#ddd";
                     })
                     .attr("stroke", "black")
@@ -137,7 +144,7 @@
                     .attr("vector-effect", "non-scaling-stroke")
                     .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);
 
-                // Update tooltip functionality
+                // Tooltip functionality
                 states.on("mouseover", (event, d) => {
                         d3.select("#tooltip")
                             .style("opacity", 1)

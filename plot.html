@@ -16,12 +16,11 @@
         }
         #svg-container {
             max-width: 100%;
-            width: 100%;  /* Adjust this to control the overall size */
-            height: 80vh; /* Make it responsive */
+            width: 100%;  /* Use 100% instead of a fixed value */
+            height: 100vh; /* 100% viewport height */
             overflow: hidden;
             display: flex;
             justify-content: center;
-            border: 1px solid #ccc; /* Add border if you want */
             position: relative;
         }
         svg {
@@ -47,7 +46,7 @@
 <body>
 
     <div id="svg-container">
-        <svg id="main-svg"></svg>
+        <svg id="main-svg" style="width: 100%; height: 100%;"></svg>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
@@ -56,7 +55,7 @@
         const svgContainer = document.getElementById("svg-container");
         const svg = d3.select("#main-svg")
             .attr("viewBox", `0 0 1200 600`)
-            .attr("preserveAspectRatio", "xMidYMid meet");
+            .attr("preserveAspectRatio", "none");  // Change this to 'none' to allow stretching
 
         Promise.all([
             d3.csv("state_percents.csv"),
@@ -72,12 +71,13 @@
                 feature.properties.percent = stateData[stateName] || 0;
             });
 
-            const width = svgContainer.clientWidth;
+           const width = svgContainer.clientWidth;
             const height = svgContainer.clientHeight;
 
+            // Recalculate the projection based on the actual dimensions
             const projection = d3.geoAlbersUsa()
                 .translate([width / 2, height / 2])
-                .scale(width * 1.5);
+                .scale(width * 1.2);  // Adjust the scaling factor slightly
 
             const pathGenerator = d3.geoPath().projection(projection);
             let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");

@@ -13,21 +13,22 @@
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
+            overflow: hidden; /* Prevent page overflow */
         }
         #svg-container {
-            max-width: 90%;
-            width: 90%;  /* Use full width */
-            height: 100vh; /* Use full viewport height */
-            overflow: hidden; /* Prevent overflow */
+            max-width: 100%;
+            width: 100%;  /* Use full width */
+            height: 100%; /* Use full height */
             display: flex;
             justify-content: center;
-            align-items: center; /* Center content */
+            align-items: center;
             position: relative;
+            overflow: hidden; /* Ensure content doesn't overflow */
         }
-
         svg {
             width: 100%;
-            height: 100%;
+            height: auto;
+            display: block; /* Ensures no extra margins */
         }
         .tooltip {
             position: absolute;
@@ -48,7 +49,7 @@
 <body>
 
     <div id="svg-container">
-        <svg id="main-svg" style="width: 100%; height: 100%;"></svg>
+        <svg id="main-svg"></svg>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
@@ -57,7 +58,7 @@
         const svgContainer = document.getElementById("svg-container");
         const svg = d3.select("#main-svg")
             .attr("viewBox", `0 0 1200 600`)
-            .attr("preserveAspectRatio", "xMidYMid meet"); // Maintain aspect ratio and center
+            .attr("preserveAspectRatio", "xMidYMid meet");
 
         Promise.all([
             d3.csv("state_percents.csv"),
@@ -73,91 +74,22 @@
                 feature.properties.percent = stateData[stateName] || 0;
             });
 
-           const width = svgContainer.clientWidth;
-           const height = svgContainer.clientHeight;
+            function updateDimensions() {
+                const width = svgContainer.clientWidth;
+                const height = svgContainer.clientHeight;
+                
+                // Adjust the projection based on the actual container dimensions
+                const projection = d3.geoAlbersUsa()
+                    .translate([width / 2, height / 2])
+                    .scale(Math.min(width, height) * 1.1);
 
-           const projection = d3.geoAlbersUsa()
-               .translate([width / 2, height / 2])
-               .scale(Math.min(width, height) * 1.0); // Adjust the scaling factor to fit better
+                const pathGenerator = d3.geoPath().projection(projection);
 
-            const pathGenerator = d3.geoPath().projection(projection);
-            let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
+                let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
 
-            const regions = {
-                northeast: ["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"],
-                south: ["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"],
-                midwest: ["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"],
-                west: ["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"]
-            };
-
-            stateFeatures.sort(() => Math.random() - 0.5);
-
-            const rows = [10, 16, 25];
-            const rowYPositions = [height * 0.2, height * 0.5, height * 0.8];
-            const scaleFactors = [1.8, 1.0, 0.6];
-
-            stateFeatures.forEach((d, i) => {
-                let rowIndex = 0;
-                if (i >= rows[0]) rowIndex = 1;
-                if (i >= rows[0] + rows[1]) rowIndex = 2;
-
-                const numColumns = rows[rowIndex];
-                const rowWidth = width; // Use the full container width
-                const spacingX = rowWidth / numColumns; // Calculate spacing based on full width
-                const leftMargin = (width - rowWidth) / 2; // Center the row within the container
-
-                d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
-                d.targetY = rowYPositions[rowIndex];
-
-                const bounds = pathGenerator.bounds(d);
-                const stateWidth = bounds[1][0] - bounds[0][0];
-                const stateHeight = bounds[1][1] - bounds[0][1];
-
-                if (stateWidth > 0 && stateHeight > 0) {
-                    const widthScale = (spacingX * 0.9) / stateWidth; // Slightly reduce to fit better
-                    const heightScale = (60 * scaleFactors[rowIndex]) / stateHeight;
-                    d.scaleFactor = Math.min(widthScale, heightScale);
-                } else {
-                    d.scaleFactor = 1;
-                }
-
-                const centroid = pathGenerator.centroid(d);
-                d.translateX = d.targetX - centroid[0] * d.scaleFactor;
-                d.translateY = d.targetY - centroid[1] * d.scaleFactor;
-            });
-
-            const tooltip = d3.select("#tooltip");
-
-            const states = svg.selectAll("path")
-                .data(stateFeatures)
-                .enter()
-                .append("path")
-                .attr("d", pathGenerator)
-                .attr("fill", d => {
-                    if (regions.northeast.includes(d.properties.name)) return "#009076";
-                    if (regions.south.includes(d.properties.name)) return "#c71e1d";
-                    if (regions.midwest.includes(d.properties.name)) return "#16a1cd";
-                    if (regions.west.includes(d.properties.name)) return "#ffd55c";
-                    return "#ddd";
-                })
-                .attr("stroke", "black")
-                .attr("stroke-width", 1.5)
-                .attr("vector-effect", "non-scaling-stroke")
-                .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`)
-                .on("mouseover", (event, d) => {
-                    tooltip.style("opacity", 1)
-                        .html(`<strong>${d.properties.name}</strong><br/>Civil War: ${d.properties.percent}%`);
-                })
-                .on("mousemove", event => {
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 20) + "px");
-                })
-                .on("mouseout", () => {
-                    tooltip.style("opacity", 0);
-                });
-
-           function reorderStates() {
-                stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
+                const rows = [10, 16, 25];
+                const rowYPositions = [height * 0.2, height * 0.5, height * 0.8];
+                const scaleFactors = [1.8, 1.0, 0.6];
 
                 stateFeatures.forEach((d, i) => {
                     let rowIndex = 0;
@@ -165,9 +97,9 @@
                     if (i >= rows[0] + rows[1]) rowIndex = 2;
 
                     const numColumns = rows[rowIndex];
-                    const totalRowWidth = width; // Ensure the full container width is used
-                    const spacingX = totalRowWidth / numColumns;
-                    const leftMargin = (width - totalRowWidth) / 2;
+                    const rowWidth = width; 
+                    const spacingX = rowWidth / numColumns;
+                    const leftMargin = (width - rowWidth) / 2;
 
                     d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
                     d.targetY = rowYPositions[rowIndex];
@@ -178,7 +110,7 @@
 
                     if (stateWidth > 0 && stateHeight > 0) {
                         const widthScale = (spacingX * 0.9) / stateWidth;
-                        const heightScale = (80 * scaleFactors[rowIndex]) / stateHeight;
+                        const heightScale = (60 * scaleFactors[rowIndex]) / stateHeight;
                         d.scaleFactor = Math.min(widthScale, heightScale);
                     } else {
                         d.scaleFactor = 1;
@@ -189,12 +121,44 @@
                     d.translateY = d.targetY - centroid[1] * d.scaleFactor;
                 });
 
-                states.transition()
-                    .duration(1000)
+                const states = svg.selectAll("path")
+                    .data(stateFeatures)
+                    .join("path")
+                    .attr("d", pathGenerator)
+                    .attr("fill", d => {
+                        if (["Connecticut", "Maine", "Massachusetts", "New Hampshire", "New Jersey", "New York", "Pennsylvania", "Rhode Island", "Vermont"].includes(d.properties.name)) return "#009076";
+                        if (["Alabama", "Arkansas", "Delaware", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "Oklahoma", "South Carolina", "Tennessee", "Texas", "Virginia", "West Virginia"].includes(d.properties.name)) return "#c71e1d";
+                        if (["Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin"].includes(d.properties.name)) return "#16a1cd";
+                        if (["Alaska", "Arizona", "California", "Colorado", "Hawaii", "Idaho", "Montana", "Nevada", "New Mexico", "Oregon", "Utah", "Washington", "Wyoming"].includes(d.properties.name)) return "#ffd55c";
+                        return "#ddd";
+                    })
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 1.5)
+                    .attr("vector-effect", "non-scaling-stroke")
                     .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);
+
+                // Update tooltip functionality
+                states.on("mouseover", (event, d) => {
+                        d3.select("#tooltip")
+                            .style("opacity", 1)
+                            .html(`<strong>${d.properties.name}</strong><br/>Civil War: ${d.properties.percent}%`);
+                    })
+                    .on("mousemove", event => {
+                        d3.select("#tooltip")
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 20) + "px");
+                    })
+                    .on("mouseout", () => {
+                        d3.select("#tooltip")
+                            .style("opacity", 0);
+                    });
             }
 
-            svg.on("click", reorderStates);
+            // Initial rendering
+            updateDimensions();
+
+            // Adjust on window resize
+            window.addEventListener("resize", updateDimensions);
         });
     </script>
 </body>

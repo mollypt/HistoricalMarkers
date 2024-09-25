@@ -76,10 +76,9 @@
            const width = svgContainer.clientWidth;
            const height = svgContainer.clientHeight;
 
-           // Recalculate the projection to dynamically adjust
            const projection = d3.geoAlbersUsa()
-                .translate([width / 2, height / 2])
-                .scale(Math.min(width, height) * 1.2); // Scale to fit within the container
+               .translate([width / 2, height / 2])
+               .scale(Math.min(width, height) * 1.0); // Adjust the scaling factor to fit better
 
             const pathGenerator = d3.geoPath().projection(projection);
             let stateFeatures = geojson.features.filter(d => d.properties.name !== "Puerto Rico");
@@ -103,9 +102,9 @@
                 if (i >= rows[0] + rows[1]) rowIndex = 2;
 
                 const numColumns = rows[rowIndex];
-                const rowWidth = width * 0.9; // Allow for some padding on both sides
-                const spacingX = rowWidth / numColumns;
-                const leftMargin = (width - rowWidth) / 2; // Adjust leftMargin to center the row
+                const rowWidth = width; // Use the full container width
+                const spacingX = rowWidth / numColumns; // Calculate spacing based on full width
+                const leftMargin = (width - rowWidth) / 2; // Center the row within the container
 
                 d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
                 d.targetY = rowYPositions[rowIndex];
@@ -115,8 +114,8 @@
                 const stateHeight = bounds[1][1] - bounds[0][1];
 
                 if (stateWidth > 0 && stateHeight > 0) {
-                    const widthScale = spacingX / stateWidth * 0.9;
-                    const heightScale = 60 / stateHeight * scaleFactors[rowIndex];
+                    const widthScale = (spacingX * 0.9) / stateWidth; // Slightly reduce to fit better
+                    const heightScale = (60 * scaleFactors[rowIndex]) / stateHeight; 
                     d.scaleFactor = Math.min(widthScale, heightScale);
                 } else {
                     d.scaleFactor = 1;
@@ -158,47 +157,38 @@
                 });
 
            function reorderStates() {
-                // Sort states by percent descending
                 stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
 
                 stateFeatures.forEach((d, i) => {
-                    // Determine which row the state belongs to
                     let rowIndex = 0;
                     if (i >= rows[0]) rowIndex = 1;
                     if (i >= rows[0] + rows[1]) rowIndex = 2;
 
                     const numColumns = rows[rowIndex];
-
-                    // Use the full width of the container
-                    const totalRowWidth = width * 0.8; // Increase to 95% to better fill the container
+                    const totalRowWidth = width; // Ensure the full container width is used
                     const spacingX = totalRowWidth / numColumns;
-                    const leftMargin = (width - totalRowWidth) / 2; // Adjust left margin to be centered
+                    const leftMargin = (width - totalRowWidth) / 2;
 
-                    // Calculate the target positions for the current state
                     d.targetX = leftMargin + (i % numColumns) * spacingX + (spacingX / 2);
                     d.targetY = rowYPositions[rowIndex];
 
-                    // Get the bounding box for the current state
                     const bounds = pathGenerator.bounds(d);
                     const stateWidth = bounds[1][0] - bounds[0][0];
                     const stateHeight = bounds[1][1] - bounds[0][1];
 
-                    // Adjust the scale factor to make sure the state fits within its allocated space
                     if (stateWidth > 0 && stateHeight > 0) {
-                        const widthScale = (spacingX * 1.0) / stateWidth; // Use 1.0 to fill the spacing better
-                        const heightScale = (80 * scaleFactors[rowIndex]) / stateHeight; // Increase this to fill rows more fully
+                        const widthScale = (spacingX * 0.9) / stateWidth;
+                        const heightScale = (80 * scaleFactors[rowIndex]) / stateHeight;
                         d.scaleFactor = Math.min(widthScale, heightScale);
                     } else {
                         d.scaleFactor = 1;
                     }
 
-                    // Translate state to target position and scale
                     const centroid = pathGenerator.centroid(d);
                     d.translateX = d.targetX - centroid[0] * d.scaleFactor;
                     d.translateY = d.targetY - centroid[1] * d.scaleFactor;
                 });
 
-                // Apply the transformation
                 states.transition()
                     .duration(1000)
                     .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);

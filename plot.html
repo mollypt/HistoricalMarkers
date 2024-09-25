@@ -15,8 +15,8 @@
             background-color: #f0f0f0;
         }
         #svg-container {
-            max-width: 100%;
-            width: 100%;  /* Use full width */
+            max-width: 90%;
+            width: 90%;  /* Use full width */
             height: 100vh; /* Use full viewport height */
             overflow: hidden; /* Prevent overflow */
             display: flex;
@@ -115,7 +115,7 @@
 
                 if (stateWidth > 0 && stateHeight > 0) {
                     const widthScale = (spacingX * 0.9) / stateWidth; // Slightly reduce to fit better
-                    const heightScale = (60 * scaleFactors[rowIndex]) / stateHeight; 
+                    const heightScale = (60 * scaleFactors[rowIndex]) / stateHeight;
                     d.scaleFactor = Math.min(widthScale, heightScale);
                 } else {
                     d.scaleFactor = 1;

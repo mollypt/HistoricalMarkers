@@ -15,8 +15,8 @@
             background-color: #f0f0f0;
         }
         #svg-container {
-            max-width: 86%;
-            width: 86%;  /* Use full width */
+            max-width: 80%;
+            width: 80%;  /* Use full width */
             height: 100vh; /* Use full viewport height */
             overflow: hidden; /* Prevent overflow */
             display: flex;
@@ -71,6 +71,8 @@
             geojson.features.forEach(feature => {
                 const stateName = feature.properties.name;
                 feature.properties.percent = stateData[stateName] || 0;
+                feature.properties.military = stateData[stateName] || 0;
+
             });
 
            const width = svgContainer.clientWidth;
@@ -156,8 +158,25 @@
                     tooltip.style("opacity", 0);
                 });
 
-           function reorderStates() {
-                stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
+            var i = 0;
+            console.log(i)
+
+           function reorderStates(i) {
+                console.log("reorder called")
+               if (i !== 0) {
+                   console.log("already called")
+                   console.log(i)
+
+                   return;
+               }
+               i += 1
+
+               if (i === 0) {
+                   stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
+               }
+                if (i === 1) {
+                   stateFeatures.sort((a, b) => b.properties.percent - a.properties.percent);
+               }
 
                 stateFeatures.forEach((d, i) => {
                     let rowIndex = 0;
@@ -187,6 +206,7 @@
                     const centroid = pathGenerator.centroid(d);
                     d.translateX = d.targetX - centroid[0] * d.scaleFactor;
                     d.translateY = d.targetY - centroid[1] * d.scaleFactor;
+
                 });
 
                 states.transition()
@@ -194,8 +214,24 @@
                     .attr("transform", d => `translate(${d.translateX}, ${d.translateY}) scale(${d.scaleFactor})`);
             }
 
-        svg.on("mouseover", reorderStates);
+            // Debounce function
+            function debounce(func, delay) {
+                let timeoutId;
+                return function (...args) {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+
+            // Your existing code
+            console.log("i is", i);
+            if (i === 0) {
+                const debouncedReorderStates = debounce(() => reorderStates(i), 500); // 300ms delay
+                svg.on("mouseover", debouncedReorderStates);
+            }
         });
+
+
     </script>
 </body>
 </html>
